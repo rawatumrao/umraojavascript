@@ -10,119 +10,80 @@ import { BsCameraVideoOffFill, BsCameraVideoFill } from "react-icons/bs";
 
 import "./onstageoffscreen.css";
 
-/* const initialData = {
-  onStage: [
-    {
-      id: "1",
-      content: "Samantha Taylor",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-    {
-      id: "2",
-      content: "Jennifer Garcia ",
-      muted: false,
-      videoOff: false,
-      host: true,
-    },
-    {
-      id: "3",
-      content: "Olivia Anderson",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-  ],
-  offScreen: [
-    {
-      id: "4",
-      content: "Omar Hasan",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-    {
-      id: "5",
-      content: "Shannon Jackson",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-    {
-      id: "6",
-      content: "Catherine Davis",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-    {
-      id: "7",
-      content: "Georgia Thompson",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-    {
-      id: "8",
-      content: "Melody Williams",
-      muted: true,
-      videoOff: true,
-      host: false,
-    },
-  ],
-};
-*/
-const OnStageOffScreen = ({participantsArray}) => {
-
-  console.log("participantsArray data is here :", participantsArray);
+const OnStageOffScreen = ({ participantsArray }) => {
+  console.log("participantsArray data is here:", participantsArray);
 
   const [data, setData] = useState(participantsArray);
-  
-  const [onStageItems, setOnStageItems] = useState([])
-  const [offScreenItems, setOffScreenItems] = useState([])
 
-  useEffect(()=> {
-    const loadItems =() => {
-      const onStage = data.filter((item)=>item.spotlightOrder !== 0).sort((a,b)=>a.spotlightOrder - b.spotlightOrder);
-      const offScreen = data.filter((item)=>item.spotlightOrder === 0);
+  const [onStageItems, setOnStageItems] = useState([]);
+  const [offScreenItems, setOffScreenItems] = useState([]);
+
+  useEffect(() => {
+    const loadItems = () => {
+      const onStage = data
+        .filter((item) => item.spotlightOrder !== 0)
+        .sort((a, b) => a.spotlightOrder - b.spotlightOrder);
+      const offScreen = data.filter((item) => item.spotlightOrder === 0);
       setOnStageItems(onStage);
       setOffScreenItems(offScreen);
-    }
+    };
     loadItems();
-  }, []);
+  }, [data]);
 
   const moveItem = (id, newSpotlightOrder) => {
-    const item = [...onStageItems, ...offScreenItems].find((item)=> item.uuid ===id);
-    if(item) {
-      const updatedItem = {...item, spotlightOrder: newSpotlightOrder};
-        // Sinulate API call to update spotlightOrder
-        console.log(`Updated item ${id} to spotlightOrder ${newSpotlightOrder}`);
-      
-      if(newSpotlightOrder === 0){
-        setOffScreenItems((prev)=> [...prev, updatedItem]);
-        setOnStageItems((prev) => prev.filter((i)=> i.id !==id).sort((a,b)=> a.spotlightOrder - b.spotlightOrder));
+    const item = [...onStageItems, ...offScreenItems].find(
+      (item) => item.uuid === id
+    );
+    if (item) {
+      const updatedItem = { ...item, spotlightOrder: newSpotlightOrder };
+      console.log(`Updated item ${id} to spotlightOrder ${newSpotlightOrder}`);
 
-      }else{
-        setOnStageItems((prev)=> [...prev, updatedItem].sort((a,b)=> a.spotlightOrder - b.spotlightOrder));
-        setOffScreenItems((prev) => prev.filter((i)=> i.id !==id));
+      if (newSpotlightOrder === 0) {
+        setOffScreenItems((prev) => [...prev, updatedItem]);
+        setOnStageItems((prev) =>
+          prev.filter((i) => i.uuid !== id).sort((a, b) => a.spotlightOrder - b.spotlightOrder)
+        );
+      } else {
+        setOnStageItems((prev) =>
+          [...prev, updatedItem].sort((a, b) => a.spotlightOrder - b.spotlightOrder)
+        );
+        setOffScreenItems((prev) => prev.filter((i) => i.uuid !== id));
       }
-
     }
-  }
-  
-  
-  
-  
-  
+  };
+
+  const onDragEnd = (result) => {
+    const { source, destination } = result;
+
+    // Dropped outside the list
+    if (!destination) {
+      return;
+    }
+
+    const sourceList = source.droppableId === "onStage" ? onStageItems : offScreenItems;
+    const destList = destination.droppableId === "onStage" ? onStageItems : offScreenItems;
+    const [movedItem] = sourceList.splice(source.index, 1);
+
+    // Update the spotlightOrder based on the destination list
+    movedItem.spotlightOrder = destination.droppableId === "onStage" ? destList.length + 1 : 0;
+
+    // Move the item to the new list
+    destList.splice(destination.index, 0, movedItem);
+
+    if (destination.droppableId === "onStage") {
+      setOnStageItems([...destList].sort((a, b) => a.spotlightOrder - b.spotlightOrder));
+      setOffScreenItems([...offScreenItems]);
+    } else {
+      setOffScreenItems([...destList]);
+      setOnStageItems([...onStageItems]);
+    }
+  };
+
   const [onStageOpen, setOnStageOpen] = useState(true);
   const [offScreenOpen, setOffScreenOpen] = useState(true);
 
   const [isMicMuted, setIsMicMuted] = useState(true);
   const [isCameraOff, setIsCameraOff] = useState(true);
-
-
-  
 
   const toggleMic = () => {
     setIsMicMuted(!isMicMuted);
@@ -132,32 +93,11 @@ const OnStageOffScreen = ({participantsArray}) => {
     setIsCameraOff(!isCameraOff);
   };
 
-  const onDragEnd = (result) => {
-    const { source, destination } = result;
-
-    //Dropped outside the list
-    if (!destination) {
-      return;
-    }
-    const sourceClone = Array.from(data[source.droppableId]);
-    const destClone = Array.from(data[destination.droppableId]);
-    const [removed] = sourceClone.splice(source.index, 1);
-
-    destClone.splice(destination.index, 0, removed);
-
-    setData({
-      ...data,
-      [source.droppableId]: sourceClone,
-      [destination.droppableId]: destClone,
-    });
-  };
-
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="container">
         <div className="list-container">
           <h3 onClick={() => setOnStageOpen(!onStageOpen)}>
-            {" "}
             {onStageOpen ? (
               <MdOutlineKeyboardArrowDown />
             ) : (
@@ -173,7 +113,7 @@ const OnStageOffScreen = ({participantsArray}) => {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                 >
-                  {onStageItems.map((item, index) => ( 
+                  {onStageItems.map((item, index) => (
                     <Draggable
                       key={item.uuid}
                       draggableId={item.uuid}
@@ -188,26 +128,29 @@ const OnStageOffScreen = ({participantsArray}) => {
                         >
                           <span className="item-content">{item.displayName}</span>
                           <span className="">
-                            { (
-                              <span className="icon" onClick={toggleMic}>
-                                {item.isMuted ? <IoMdMicOff color="red" /> : <IoMdMic color="green"/>}
-                              </span>
+                            <span className="icon" onClick={toggleMic}>
+                              {item.isMuted ? (
+                                <IoMdMicOff color="red" />
+                              ) : (
+                                <IoMdMic color="green" />
+                              )}
+                            </span>
+                            <span className="icon" onClick={toggleCamera}>
+                              {item.isCameraMuted ? (
+                                <BsCameraVideoOffFill color="red" />
+                              ) : (
+                                <BsCameraVideoFill color="green" />
+                              )}
+                            </span>
+                            {item.role === "chair" && (
+                              <span className="host">/Host</span>
                             )}
-                            { (
-                              <span className="icon" onClick={toggleCamera}>
-                                {item.isCameraMuted ? (
-                                  <BsCameraVideoOffFill color="red"/>
-                                ) : (
-                                  <BsCameraVideoFill color="green"/>
-                                )}
-                              </span>
-                            )}
-                            {item.role === "chair" && <span className="host">/Host</span>}
                           </span>
                         </div>
                       )}
                     </Draggable>
                   ))}
+                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
@@ -215,7 +158,6 @@ const OnStageOffScreen = ({participantsArray}) => {
         </div>
         <div className="list-container">
           <h3 onClick={() => setOffScreenOpen(!offScreenOpen)}>
-            {" "}
             {offScreenOpen ? (
               <MdOutlineKeyboardArrowDown />
             ) : (
@@ -244,25 +186,26 @@ const OnStageOffScreen = ({participantsArray}) => {
                           {...provided.dragHandleProps}
                           className="item"
                         >
-                          {item.displayName}
-                          { (
-                            <span className="icon" onClick={toggleMic}>
-                              {item.isMuted ? <IoMdMicOff color="red" /> : <IoMdMic color="green"/>}
-                            </span>
-                          )}
-                          {  (
-                            <span className="icon" onClick={toggleCamera}>
-                              {item.isCameraMuted ? (
-                                <BsCameraVideoOffFill color="red"/>
-                              ) : (
-                                <BsCameraVideoFill color="green"/>
-                              )}
-                            </span>
-                          )}
+                          <span className="item-content">{item.displayName}</span>
+                          <span className="icon" onClick={toggleMic}>
+                            {item.isMuted ? (
+                              <IoMdMicOff color="red" />
+                            ) : (
+                              <IoMdMic color="green" />
+                            )}
+                          </span>
+                          <span className="icon" onClick={toggleCamera}>
+                            {item.isCameraMuted ? (
+                              <BsCameraVideoOffFill color="red" />
+                            ) : (
+                              <BsCameraVideoFill color="green" />
+                            )}
+                          </span>
                         </div>
                       )}
                     </Draggable>
                   ))}
+                  {provided.placeholder}
                 </div>
               )}
             </Droppable>
