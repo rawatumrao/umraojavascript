@@ -1,0 +1,74 @@
+/* Container for the expand/collapse conponent */
+.expand-collapse-container {
+    padding: 20px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+/* Header styling */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.expand-button,
+.collapse-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-right: 60px;
+}
+
+.expand-button {
+    margin-right: 20px;
+}
+
+.collapse-button {
+    margin-right: 20px;
+}
+
+.see-all {
+    font-size: 16px;
+    color: white;
+    cursor: pointer;
+}
+
+/* Image gallery styling */
+.image-gallery {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.nav-button {
+    background-color: #0f1113;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 20px;
+}
+
+.images {
+    display: flex;
+    overflow: hidden;
+}
+
+.images img {
+    width: 150px;
+    height: 150px;
+    margin: 0 10px;
+    border-radius: 8px;
+}
+
+.imagess {
+    width: 50px;
+    height: 50px;
+    border-radius: 2px;
+}
