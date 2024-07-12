@@ -1,13 +1,8 @@
-// import { useState } from 'react'
-//import reactLogo from './assets/react.svg'
-//import viteLogo from '/vite.svg'
+
 import "./App.css";
-import "./assets/css/styles.css";
 import ComponentWrapper from "./components/ComponentWrapper.jsx";
 import ViewAllLayout from "./components/viewalllayout/viewalllayout.jsx";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-
-//===========================================================
+import { HashRouter as Router, Route, Routes } from "react-router-dom";
 
 import { useState, useRef, useEffect } from "react";
 import {
@@ -23,7 +18,6 @@ import {
 } from "././contexts/constants";
 import { AppContext } from "././contexts/context";
 import { createData } from "././utils/processJsonData";
-import axios from 'axios';
 
 const findRoleOfUser = (users) => {
   let amIaHost = false;
@@ -37,18 +31,30 @@ function App() {
   const [preseterLayout, setPresenterLayout] = useState(null);
   const [mediaLayout, setMediaLayout] = useState(null);
 
+  // Setting up presenter and media layout by clicking on apply button
   const handleApplyClick = () => {
-    const postData = {
-      pLayout: preseterLayout,
-      mLayout: mediaLayout,
-    };
-    
-    axios.post(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/transform_layout`,postData).then(response => {
-      console.log('Data posted successfully :', response.data);
-    }).catch(error => {
-      console.error('Error posting data :', error);
-    });
-  }
+    const postData = {"transforms": {"layout": preseterLayout}};
+      
+    console.log("Testing Data which is going to set", postData);
+    fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/transform_layout`,
+      {
+        method: 'POST',
+        headers: {
+          token: `${INITIAL_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData)
+      }).then(response => {
+        console.log("response", response)
+        if(response.ok){
+          console.log("Layout setup successfully", response)
+        } else {
+          console.log("There is some network issue to setup layout", response)
+        }
+      }).catch(e =>{
+        console.log("Error during setup layout", e)
+      })
+  };
 
   let [participantsArray, setParticipantsArray] = useState(
     createData(INITIAL_PARTICIPANT)
@@ -79,10 +85,12 @@ function App() {
     const bc = new BroadcastChannel("pexip");
     bc.onmessage = (msg) => {
       console.log(msg.data);
+
       console.log(
         `%c ****************************`,
         `color: red; font-weight: bold;`
       );
+      
       if (msg.data.event === EVENTS.token_refresh) {
         Data.current = {
           token: msg.data.info,
@@ -101,18 +109,27 @@ function App() {
 
   return (
     <>
-    <AppContext.Provider value={Data}>
-      <Router>
-        <Routes>
-          <Route
-            path="/"
-            element={<ComponentWrapper participantsArray={participantsArray} pLayout={setPresenterLayout} mLayout={setMediaLayout} />}
-          />
-          <Route path="/view-all" element={<ViewAllLayout />} />
-        </Routes>
-      </Router>
-      <button className="apply-button" onClick={handleApplyClick}>Apply</button>
-    </AppContext.Provider>
+      <AppContext.Provider value={Data}>
+        <Router>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                <ComponentWrapper
+                  participantsArray={participantsArray}
+                  pLayout={setPresenterLayout}
+                  mLayout={setMediaLayout}
+                />
+                <button className="btn" onClick={handleApplyClick}>Apply</button>
+                </>
+              }
+            />
+            <Route path="/view-all" element={<ViewAllLayout />} />
+          </Routes>
+        </Router>
+        
+      </AppContext.Provider>
     </>
   );
 }
