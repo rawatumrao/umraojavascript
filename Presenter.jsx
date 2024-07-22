@@ -1,39 +1,26 @@
 import React, { useState } from "react";
-import "./presenter.css";
+import "../mlayout/media.css";
+import { images, headerImage } from "../../../config/imageConstants.js";
 import {
   MdOutlineKeyboardArrowDown,
   MdOutlineKeyboardArrowRight,
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
-const images = [
-  {layout: "", imageUrl: "./images/viewall/Adaptive1.PNG", Descrption: ""},
-  {layout: "1:0", imageUrl: "./images/viewall/sf1.PNG", Descrption: "main speaker only"},
-  {layout: "1:1", imageUrl: "./images/viewall/sf2.PNG", Descrption: "main speaker and up to 1 previous speakers"},
-  {layout: "1:7", imageUrl: "./images/viewall/sf3.PNG", Descrption: "main speaker and up to 7 previous speakers"},
-  {layout: "2:0", imageUrl: "./images/viewall/es1.PNG", Descrption: "2 main speakers only"},
-  {layout: "3:0", imageUrl: "./images/viewall/es2.PNG", Descrption: "3 main speakers only"},
-  {layout: "4:0", imageUrl: "./images/viewall/es3.PNG", Descrption: "2x2 layout, up to a maximum of 4 speakers"},
-  {layout: "9:0", imageUrl: "./images/viewall/es4.PNG", Descrption: "3x3 layout, up to a maximum of 9 speakers"},
-  {layout: "16:0", imageUrl: "./images/viewall/es5.PNG", Descrption: "4x4 layout, up to a maximum of 16 speakers"},
-  {layout: "20:0", imageUrl: "./images/viewall/es6.PNG", Descrption: "4x5 layout, up to a maximum of 20 speakers"},
-  {layout: "2:18", imageUrl: "./images/viewall/lg1.PNG", Descrption: "two main speakers and up to 18 other participants"},
-  {layout: "2:8", imageUrl: "./images/viewall/lg2.PNG", Descrption: "two main speakers and up to 8 other participants"},
-  {layout: "1:9", imageUrl: "./images/viewall/lg3.PNG", Descrption: "one main speaker and up to 9 other participants"},
-  {layout: "1:18", imageUrl: "./images/viewall/lg4.PNG", Descrption: "one main speakers and up to 18 other participants"},
-  {layout: "1:12", imageUrl: "./images/viewall/lg5.PNG", Descrption: "large main speaker and up to 12 other participants"},
-  {layout: "1:19", imageUrl: "./images/viewall/lg6.PNG", Descrption: "one main speakers and up to 19 other participants"},
-];
-
-const Presenter = () => {
+const Presenter = ({ pLayout }) => {
   const [expanded, setExpanded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState(null);
+
   const navigate = useNavigate();
 
-const handleImageClick = (image) => {
-  setSelectedImage(image);
-}
+  const handleImageClick = (image) => {
+    pLayout(image.layout);
+    setSelectedImage(image);
+  };
+
   const toggleExpandCollapse = () => {
     setExpanded(!expanded);
   };
@@ -57,18 +44,18 @@ const handleImageClick = (image) => {
       <div className="header">
         {!expanded ? (
           <>
-            <button className="expand-button" onClick={toggleExpandCollapse}>
+            <span className="expand-button" onClick={toggleExpandCollapse}>
               <MdOutlineKeyboardArrowRight /> Presenter Layout
-            </button>
+            </span>
             <span className="">
-              <img className="imagess" src="./images/presenterhead.png"></img>
+              <img className="header-image" src={headerImage}></img>
             </span>
           </>
         ) : (
           <>
-            <button className="collapse-button" onClick={toggleExpandCollapse}>
+            <span className="collapse-button" onClick={toggleExpandCollapse}>
               <MdOutlineKeyboardArrowDown /> Presenter Layout
-            </button>
+            </span>
             <span className="see-all" onClick={handleSeeAllClick}>
               See All
             </span>
@@ -77,25 +64,35 @@ const handleImageClick = (image) => {
       </div>
       {expanded && (
         <div className="image-gallery">
-          <button className="nav-button" onClick={handlePrev}>
-            &lt;
-          </button>
+          <FontAwesomeIcon
+            icon={faChevronLeft}
+            className="nav-arrow left-arrow"
+            onClick={handlePrev}
+          />
           <div className="images">
-            {images
-              .slice(currentImageIndex, currentImageIndex + 7)
-              .map((src, index) => (
+            {images.slice(currentImageIndex, currentImageIndex + 7).map(
+              (image, index) => (
                 <img
                   key={index}
-                  src={src.imageUrl}
+                  src={image.imageUrl}
                   alt={`Image ${index + 1}`}
-                  onClick={()=>handleImageClick(src)}
-                  className = "zoom-image"
+                  onClick={() => handleImageClick(image)}
+                  className="zoom-image"
+                  style={{
+                    border:
+                      selectedImage?.imageUrl === image.imageUrl
+                        ? "2px solid blue"
+                        : "none",
+                  }}
                 />
-              ))}
+              )
+            )}
           </div>
-          <button className="nav-button" onClick={handleNext}>
-            &gt;
-          </button>
+          <FontAwesomeIcon
+            icon={faChevronRight}
+            className="nav-arrow right-arrow"
+            onClick={handleNext}
+          />
         </div>
       )}
     </div>
