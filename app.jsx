@@ -2,7 +2,7 @@ import "./App.css";
 import ComponentWrapper from "./components/common/ComponentWrapper.jsx";
 import ViewAllLayout from "./components/layout/viewalllayout/viewalllayout.jsx";
 import { HashRouter as Router, Route, Routes } from "react-router-dom";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   EVENTS,
   INITIAL_TOKEN,
@@ -12,12 +12,16 @@ import {
   VB_URI_NAME,
   ROLES,
 } from "./config/constants.js";
-import { createData } from "./utils/processJsonData";
+import { AppContext } from "././contexts/context";
+import { createData } from "././utils/processJsonData";
 import {
   fetchParticipants,
   transformLayout,
   participantSpotlightOn,
   participantSpotlightOff,
+  setParticipantToLayoutGroup,
+  clearParticipantFromLayoutGroup,
+  clearPinningConfig,
 } from "./utils/fetchRequests.js";
 
 const findRoleOfUser = (users) => {
@@ -37,10 +41,46 @@ const loadFromLocalStorage = (key, initialValue) => {
   return saved ? JSON.parse(saved) : initialValue;
 };
 
+// const callSetLayoutAPI = async (itemId) => {
+//   try{
+//     const response = await setParticipantToLayoutGroup({
+//       uuid: itemId,
+//       body: { "layout_group": "seven" },
+//     });
+//     if(!response.ok){
+//       throw new Error("Network response was not ok");
+//     }
+//     const result = await response.json();
+//     console.log("setLayout response : ", result);
+//   }catch(error) {
+//     console.log("Failed to set layout: ", error);
+//   }
+// };
+
+// const callReduceLayoutAPI = async (itemId) => {
+//   try{
+//     const response = await clearParticipantFromLayoutGroup({
+//       uuid: itemId,
+//       body: { "layout_group": "seven" },
+//     });
+//     if(!response.ok){
+//       throw new Error("Network response was not ok");
+//     }
+//     const result = await response.json();
+//     console.log("setLayout response : ", result);
+//   }catch(error) {
+//     console.log("Failed to set layout: ", error);
+//   }
+// };
+
+
+
+
 function App() {
   const [presenterLayout, setPresenterLayout] = useState(null);
   const [presenterAllLayout, setPresenterAllLayout] = useState(null);
   const [mediaLayout, setMediaLayout] = useState(null);
+  const [voiceActivated, setVoiceActivated] = useState(true);
   let [participantsArray, setParticipantsArray] = useState(
     loadFromLocalStorage("participants", createData(INITIAL_PARTICIPANT))
   );
@@ -52,29 +92,37 @@ function App() {
     saveToLocalStorage("participants", participantsArray);
   }, [participantsArray]);
 
+  
+
   // Setting up presenter and media layout by clicking on apply button
 
   const handleApplyClick = useCallback(async () => {
-    let hasChanges = false;
+   // let hasChanges = false;
     try {
+      if(!voiceActivated){
+        const response = await clearPinningConfig();
+      if(!response.ok){
+        throw new Error("Network clearPinningConfigresponse is not ok");
+      }
+      const result = await response.json();
+      console.log("Called clearPinningConfig API response: ", result);
+      }
+
       const selectedLayout =
         presenterAllLayout !== null ? presenterAllLayout : presenterLayout;
-      console.log("selectedLayout:", selectedLayout);
 
       if (selectedLayout !== null) {
-        console.log("Selected Layout:", selectedLayout);
-
         const response = await transformLayout({
           token: Data.current.token,
-          body: { transforms: { layout: selectedLayout } },
+          body: { transforms: { layout: presenterLayout } },
         });
 
         if (response.ok) {
-          console.log("Layout setup successfully", response);
-          hasChanges = true;
+          console.log("Transform Layout successfully", response);
         } else {
-          console.log("Network issue setting up layout", response);
+          console.log("There is some network issue during Transform Layout : ", response);
         }
+      //  hasChanges = true;
       }
 
       const participantsChanges = participantsArray.filter((participant) => {
@@ -87,54 +135,62 @@ function App() {
         );
       });
 
-      // Make necessary API calls to update participant's spotlightOrder value
+      // Make mecessary API calls to update participant's spotlightOrder and Layout_group values
       if (participantsChanges.length > 0) {
-        console.log("Calling spotlight change", participantsChanges);
-        hasChanges = true;
+       // hasChanges = true;
         for (const participant of participantsArray) {
           if (participant.spotlightOrder > 0) {
-            console.log("Calling spotlightOn", participant.spotlightOrder);
             await participantSpotlightOn({
               uuid: participant.uuid,
               token: Data.current.token,
             });
+            //await callSetLayoutAPI(participant.uuid);
+            await setParticipantToLayoutGroup({
+              uuid: participant.uuid,
+              token: Data.current.token,
+              layoutgroup: participant.layout_group,
+            });
+
           } else {
-            console.log("Calling spotlightOff", participant.spotlightOrder);
             await participantSpotlightOff({
               uuid: participant.uuid,
               token: Data.current.token,
             });
+           //await callReduceLayoutAPI(participant.uuid);
+            await clearParticipantFromLayoutGroup({
+              uuid: participant.uuid,
+              token: Data.current.token,
+              layoutgroup: "",
+            });
           }
         }
-        console.log("Participants updated successfully");
+        console.log("Participant spotlight and layout_group data updated successfully");
       }
 
-      if (hasChanges) {
-        console.log("Changes applied successfully");
-      } else {
-        console.log("No changes to apply");
-      }
+      // if (hasChanges) {
+      //   console.log("Changes are applied successfully");
+      // } else {
+      //   console.log("No changes to apply");
+      // }
     } catch (e) {
-      console.log("Error during apply process", e);
+      console.log("Error during apply changes : ", e);
     }
-  }, [presenterLayout, presenterAllLayout, participantsArray, initialParticipantsArray]);
+  }, [voiceActivated, presenterLayout, presenterAllLayout, participantsArray, initialParticipantsArray,]);
 
   useEffect(() => {
     const fetchInitialParticipants = async () => {
       try {
-        let data = await fetchParticipants({
-          token: Data.current.token,
-        });
+        let data = await fetchParticipants();
         let updatedData = createData(data.result);
         Data.current.meRole = findRoleOfUser(updatedData);
         setParticipantsArray(updatedData);
         setInitialParticipantsArray(updatedData);
       } catch (error) {
-        console.error("Error fetching participants:", error);
+        console.error("Error Fetching participants: ", error);
       }
     };
 
-    if (ENV === ENVIRONMENT.dev) {
+    if (ENV === ENVIRONMENT.prod) {
       fetchInitialParticipants();
     }
     // get server sent events on pexip broadcast channel
@@ -173,34 +229,41 @@ function App() {
 
   return (
     <>
-      <Router>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <ComponentWrapper
-                  participantsArray={participantsArray}
-                  pLayout={handlePresenterLayoutChange}
-                  mLayout={setMediaLayout}
-                  setParticipantsArray={setParticipantsArray}
-                />
-                <button className="btn" onClick={handleApplyClick}>
-                  Apply
-                </button>
-              </>
-            }
-          />
-          <Route
-            path="/view-all"
-            element={
-              <ViewAllLayout
-                setPresenterAllLayout={handlePresenterAllLayoutChange}
-              />
-            }
-          />
-        </Routes>
-      </Router>
+      <AppContext.Provider
+        value={{
+          presenterLayout,
+          setPresenterLayout,
+          mediaLayout,
+          setMediaLayout,
+          participantsArray,
+          setParticipantsArray,
+          voiceActivated,
+          setVoiceActivated,
+          Data,
+        }}
+      >
+        <Router>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                  <ComponentWrapper
+                    participantsArray={participantsArray}
+                    pLayout={handlePresenterLayoutChange}
+                    mLayout={setMediaLayout}
+                    setParticipantsArray={setParticipantsArray}
+                  />
+                  <button className="btn" onClick={handleApplyClick}>
+                    Apply
+                  </button>
+                </>
+              }
+            />
+            <Route path="/view-all" element={<ViewAllLayout  setPresenterAllLayout={handlePresenterAllLayoutChange}/>} />
+          </Routes>
+        </Router>
+      </AppContext.Provider>
     </>
   );
 }
