@@ -1,20 +1,23 @@
-import React, { useState } from "react";
-import "./pmanagement.css";
+import React, { useContext, useState } from "react";
+import "../mlayout/media.css";
 import OnStageOffScreen from "./onstageoffscreen.jsx";
 import {
   MdOutlineKeyboardArrowDown,
   MdOutlineKeyboardArrowRight,
 } from "react-icons/md";
 import Switch from "react-switch";
+//import { clearPinningConfig } from "../../../utils/fetchRequests.js";
+import { AppContext } from "../../../contexts/context.js";
 
-const PManagement = ({participantsArray}) => {
-  const [checked, setChecked] = useState(false);
-
-  const [expanded, setExpanded] = useState(false);
+const PManagement = ({participantsArray, setParticipantsArray}) => {
+  const {setVoiceActivated} = useContext(AppContext);
+  const [checked, setChecked] = useState(true);
+  const [expanded, setExpanded] = useState(true);
 
   const handleChange = (nextChecked) => {
     setChecked(nextChecked);
-  };
+    setVoiceActivated(nextChecked);
+  }; 
 
   const toggleExpandCollapse = () => {
     setExpanded(!expanded);
@@ -23,16 +26,14 @@ const PManagement = ({participantsArray}) => {
   return (
     <div className="expand-collapse-container">
       <div className="header">
-        <div className="header">
-          <button className="expand-button" onClick={toggleExpandCollapse}>
+          <span className="expand-button" onClick={toggleExpandCollapse}>
             {!expanded ? (
               <MdOutlineKeyboardArrowRight />
             ) : (
               <MdOutlineKeyboardArrowDown />
             )}
             Presenter Management
-          </button>
-        </div>
+          </span>
       </div>
       {expanded && (
         <div>
@@ -48,7 +49,6 @@ const PManagement = ({participantsArray}) => {
                   onColor="#00BFFF"
                   onHandleColor="#00BFFF"
                   handleDiameter={20}
-                  uncheckedHandleIcon={false}
                   checkedIcon={false}
                   height={20}
                   width={48}
@@ -58,9 +58,9 @@ const PManagement = ({participantsArray}) => {
             </span>
           </div>
 
-          <dev>
-            {!checked && <OnStageOffScreen participantsArray={participantsArray}/>}
-          </dev>
+          <div>
+            {!checked && <OnStageOffScreen participantsArray={participantsArray} setParticipantsArray={setParticipantsArray} />}
+          </div>
         </div>
       )}
     </div>
