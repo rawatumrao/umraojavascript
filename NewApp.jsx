@@ -131,19 +131,15 @@ function App() {
         );
         return (
           initialParticipant &&
-          initialParticipant.spotlightOrder !== participant.spotlightOrder
+          initialParticipant.layout_group !== participant.layout_group
         );
       });
 
-      // Make mecessary API calls to update participant's spotlightOrder and Layout_group values
+      // Make mecessary API calls to update participant's Layout_group values
       if (participantsChanges.length > 0) {
        // hasChanges = true;
         for (const participant of participantsArray) {
-          if (participant.spotlightOrder > 0) {
-            await participantSpotlightOn({
-              uuid: participant.uuid,
-              token: Data.current.token,
-            });
+          if (participant.layout_group > 0) {
             //await callSetLayoutAPI(participant.uuid);
             await setParticipantToLayoutGroup({
               uuid: participant.uuid,
@@ -151,20 +147,27 @@ function App() {
               layoutgroup: participant.layout_group,
             });
 
+            // await participantSpotlightOn({
+            //   uuid: participant.uuid,
+            //   token: Data.current.token,
+            // });
+            
+            
           } else {
-            await participantSpotlightOff({
-              uuid: participant.uuid,
-              token: Data.current.token,
-            });
-           //await callReduceLayoutAPI(participant.uuid);
+            //await callReduceLayoutAPI(participant.uuid);
             await clearParticipantFromLayoutGroup({
               uuid: participant.uuid,
               token: Data.current.token,
               layoutgroup: "",
             });
+            // await participantSpotlightOff({
+            //   uuid: participant.uuid,
+            //   token: Data.current.token,
+            // });
+           
           }
         }
-        console.log("Participant spotlight and layout_group data updated successfully");
+        console.log("Participant layout_group data updated successfully");
       }
 
       // if (hasChanges) {
