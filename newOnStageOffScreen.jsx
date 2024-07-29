@@ -11,6 +11,11 @@ import { BsCameraVideoOffFill, BsCameraVideoFill } from "react-icons/bs";
 import "./onstageoffscreen.css";
 // import { setParticipantToLayoutGroup, clearParticipantFromLayoutGroup } from "../../../utils/fetchRequests";
 
+const numberToWords=(num) => {
+  const words = ["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+  return words[num -1] || "unknown";
+};
+
 const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
   const [onStageItems, setOnStageItems] = useState([]);
   const [offScreenItems, setOffScreenItems] = useState([]);
@@ -57,28 +62,54 @@ const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
     }
 
     destList.splice(destination.index, 0, movedItem);
+    
+    if(destination.droppableId === "onStage"){
+      // Recalculated layout_group and update onStageItems
+      const updatedOnStageItems = destList.filter((item) => item.protocol !== "api" && item.protocol !== "rtmp").map((item, index) => ({
+        ...item,
+        layout_group: (index === null || index === 0 )? numberToWords(1): numberToWords(index + 1),
+      })); 
 
-    if (destination.droppableId === "onStage") {
-      setOnStageItems(
-        destList
-          .filter((item) => item.protocol !== "api" && item.protocol !== "rtmp")
-          .sort((a, b) => a.spotlightOrder - b.spotlightOrder)
-      );
+      setOnStageItems(updatedOnStageItems);
       setOffScreenItems([...offScreenItems]);
     } else {
-      setOffScreenItems(
-        destList.filter(
-          (item) => item.protocol !== "api" && item.protocol !== "rtmp"
-        )
-      );
+      // Ensure layout_group is emplty for offScreenItems
+      const updatedOffScreenItems = destList.filter((item) => item.spotlightOrder === 0).sort((a, b) => a.spotlightOrder - b.spotlightOrder).map((item, index) => ({
+        ...item,
+        layout_group: "", // Keep layout_group as empty String
+      }));
+
+      setOffScreenItems(updatedOffScreenItems);
       setOnStageItems([...onStageItems]);
     }
+ 
+    // if (destination.droppableId === "onStage") {
+    //   setOnStageItems(
+    //     destList
+    //       .filter((item) => item.protocol !== "api" && item.protocol !== "rtmp")
+    //       .sort((a, b) => a.spotlightOrder - b.spotlightOrder)
+    //   );
+    //   setOffScreenItems([...offScreenItems]);
+    // } else {
+    //   setOffScreenItems(
+    //     destList.filter(
+    //       (item) => item.protocol !== "api" && item.protocol !== "rtmp"
+    //     )
+    //   );
+    //   setOnStageItems([...onStageItems]);
+    // }
 
     const updatedData = [...onStageItems, ...offScreenItems].map((item) =>
       item.uuid === movedItem.uuid
         ? { ...item, spotlightOrder: movedItem.spotlightOrder }
         : item
     );
+
+    // const updatedData = [...updatedOnStageItems, ...updatedOffScreenItems].map((item) =>
+    //   item.uuid === movedItem.uuid
+    //     ? { ...item, spotlightOrder: movedItem.spotlightOrder }
+    //     : item
+    // );
 
     setData(updatedData);
     setParticipantsArray(updatedData); //Update the parent state with new data
