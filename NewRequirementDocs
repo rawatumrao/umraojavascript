@@ -1,0 +1,165 @@
+Integrate Pinning API - Summary of API calls and Pinning Scenarios needed for Layout Control Panel
+
+Description
+
+This ticket outlines all the necessary Pinning API Calls for the VB Layout Control Room.
+
+Set Pinning Config
+
+This sets the amount of available pinning spaces for the conference and must match the amount of selected participants to be included in the layout. There are 20 available pinning spaces based on our max participant count of 20. If there are too little of spaces, presenters will be missing from the layout, and if there are too many there will be blank spaces in the layout.
+
+API Call
+
+https://docs.pexip.com/beta/api_client/api_rest.htm#set_pinning_config
+
+There are 20 Pinning Configurations that we have set as defined below
+
+
+
+"pin_01","pin_02","pin_03","pin_04","pin_05","pin_06","pin_07","pin_08","pin_09","pin_10","pin_11","pin_12","pin_13","pin_14","pin_15","pin_16","pin_17","pin_18","pin_19","pin_20"
+Example API Call:
+
+
+
+POST /api/client/v2/conferences/123456/set_pinning_config
+{"pinning_config": "pin_03"}
+ Clear Pinning Config
+
+This must be done to disable the pinning mode within the Conference, you would make this call when Enabling Voice-Activation Mode. You basically just do a set_pinning_config call with a blank config "".
+
+Example API Call
+
+
+
+POST /api/client/v2/conferences/123456/set_pinning_config
+{"pinning_config": ""}
+Get Current Pinning Config
+
+If we need to get the current pin config that is set for the conference, this can be used.
+
+API Call
+
+https://docs.pexip.com/beta/api_client/api_rest.htm#get_pinning_config
+
+Example API Call
+
+
+
+GET /api/client/v2/conferences/123456/get_pinning_config
+ 
+Set Participant to a Layout Group
+
+This will assign a participant to a particular numbered space in the layout group, this will correspond with the set order of the participants.
+
+There are 20 Pinning Layout Groups as defined below. There will be only one participant set to each layout group spot.
+
+
+
+"one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"
+Example API Call
+
+
+
+POST /api/client/v2/conferences/123456/participants/8f246365-2955-4c23-9658-4b1b56d81bfb/layout_group
+{"layout_group": "seven" }
+Clearing a Participant from a Layout Group
+This will remove a participant from a layout_group space and must be set if a participant is removed from the overall layout.
+Example API Call
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant1uuid/layout_group
+{"layout_group": "" }
+
+Sequence of API calls for Scenarios
+
+Applying a Layout with Pinned Participants
+
+Outline of Calls
+1. Clear Layout Groups for any Participants previously set in Layout Group Positions that are not included in the new layout.
+2. Set the Pinning Configuration that Equals the amount of selected participants.
+3. Set the type of Transforms Layout 
+4. Set Participants to their corresponding layout_group spaces.
+5. Apply
+
+Example of calls for setting 3 Participants in a 4:0 Layout Grid and removing one Participant.
+
+ Remove Participant Currently in Position Three
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant4uuid/layout_group
+{"layout_group": "" }
+Three Selected Participants Equals a Pinning Config of 3
+
+
+
+POST /api/client/v2/conferences/123456/set_pinning_config
+{"pinning_config": "pin_03"}
+Transform Layout to 4:0 Grid
+
+
+
+POST /api/client/v2/conferences/123456/transform_layout
+{"transforms": {"layout": "4:0"}}
+Set Participant Layout Groups for each of the participants in order, participantuuid would equal to participant’s actual UUID in API call.
+
+First Position Participant
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant1uuid/layout_group
+{"layout_group": "one" }
+Second Position Participant
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant2uuid /layout_group
+{"layout_group": "two" }
+Third Position Participant
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant2uuid /layout_group
+{"layout_group": "three" }
+Apply Layout and make API calls
+
+Rules for moving in and out Pinned Participants from the Layout.
+
+Any Participant added to the layout must have their corresponding layout_group space assigned to them.
+
+You can’t have multiple Participants assigned to the same layout_group space.
+
+Any Participant that has their order changed in the layout must have a newly assigned layout_group number.
+
+Any Participant removed from the layout must have a blank ““ layout_group applied to them.
+
+
+Enabling Voice Activation and DIsable Pinning Layout Control
+
+ Clear the Pinning Configuration and set all previously pinned participants to a blank layout_group  value ””.
+
+Set Pinning Config to Blank
+
+
+
+POST /api/client/v2/conferences/123456/set_pinning_config
+{"pinning_config": ""}
+First Position Participant to blank layout group
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant1uuid/layout_group
+{"layout_group": "" }
+Second Position Participant to blank layout group
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant2uuid/layout_group
+{"layout_group": "" }
+Third Position Participant to blank layout group
+
+
+
+POST /api/client/v2/conferences/123456/participants/participant2uuid/layout_group
+{"layout_group": "" }
