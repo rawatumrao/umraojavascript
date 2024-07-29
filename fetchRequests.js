@@ -72,14 +72,14 @@ export const transformLayout = async (data) => {
   return response;
 };
 
-export const fetchParticipants = async () => {
+export const fetchParticipants = async (data) => {
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants`, {
     headers: {
-      token: `${INITIAL_TOKEN}`,
+      token: `${data.token}`,
     },
   });
-  const data = await response.json();
-  return data.result;
+  const responseData = await response.json();
+  return responseData.result;
 };
 
 export const participantSpotlightOn = async (data) => {
