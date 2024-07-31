@@ -60,7 +60,7 @@ export const conferenceGetFetch = async (data) => {
 /* ============================     Control-Room-Api      =============================== */
 
 export const transformLayout = async (data) => {
-  console.log("Selected Layout and new token: ", data.body,data.token );
+  console.log("Selected Layout and new token: ", data.body);
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/transform_layout`, {
     method: "POST",
     headers: {
@@ -72,14 +72,16 @@ export const transformLayout = async (data) => {
   return response;
 };
 
-export const fetchParticipants = async (data) => {
+export const fetchParticipants = async () => {
+  
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants`, {
     headers: {
-      token: `${data.token}`,
+      token: `${INITIAL_TOKEN}`, 
     },
   });
-  const responseData = await response.json();
-  return responseData.result;
+  const data = await response.json();
+  console.log("Verify generated token info", data.result );
+  return data.result;
 };
 
 export const participantSpotlightOn = async (data) => {
@@ -112,36 +114,37 @@ export const participantSpotlightOff = async (data) => {
 
 /* ============================     Pinning API call During Voice-Activation Mode in Control-Room-Api      =============================== */
 
-export const setPinningConfig = async () => {
+export const setPinningConfig = async (data) => {
+  console.log("called setPinningConfig api and value is: ", data.pinning_config);
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/set_pinning_config`,  {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      token: `${INITIAL_TOKEN}`,
+      token: `${data.token}`,
     },
-    body: JSON.stringify({"pinning_config": "pin_03"}),
+    body: JSON.stringify({"pinning_config": data.pinning_config}),
   });
   return response;
 };
 
-export const getPinningConfig = async () => {
+export const getPinningConfig = async (data) => {
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/get_pinning_config`, {
     headers: {
-      token: `${INITIAL_TOKEN}`,
+      token: `${data.token}`,
     },
   });
-  const data = await response.json();
-  return data.result;
+  const responseData = await response.json();
+  return responseData.result;
 };
 
 
-export const clearPinningConfig = async () => {
+export const clearPinningConfig = async (data) => {
   console.log("Called clearPinningConfig");
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/set_pinning_config`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      token: `${INITIAL_TOKEN}`,
+      token: `${data.token}`,
     },
     body: JSON.stringify({"pinning_config": ""}),
   });
@@ -149,7 +152,7 @@ export const clearPinningConfig = async () => {
 };
 
 export const setParticipantToLayoutGroup = async (data) => {
-  console.log("called setParticipantToLayoutGroup API");
+  console.log("called setParticipantToLayoutGroup API", data.layoutgroup);
   const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/layout_group`,  {
     method: "POST",
     headers: {
