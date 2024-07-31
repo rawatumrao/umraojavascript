@@ -92,65 +92,59 @@ function App() {
     // let hasChanges = false;
     try {
       if (!voiceActivated) {
-        try{
-        const response = await clearPinningConfig({
-          token: Data.current.token,
-        });
-      
-        if (!response.ok) {
-          throw new Error("Network clearPinningConfigresponse is not ok");
+        try {
+          const response = await clearPinningConfig({
+            token: Data.current.token,
+          });
+
+          if (!response.ok) {
+            throw new Error("Network clearPinningConfigresponse is not ok");
+          }
+          const result = await response.json();
+          console.log("Called clearPinningConfig API response: ", result);
+        } catch (error) {
+          console.error("Error message: ", error);
         }
-        const result = await response.json();
-        console.log("Called clearPinningConfig API response: ", result);
-      }catch(error){
-        console.error("Error message: ", error);
-      }
       }
 
       const selectedLayout =
         presenterAllLayout !== null ? presenterAllLayout : presenterLayout;
 
       if (selectedLayout !== null) {
-        try{
+        try {
+          const response = await transformLayout({
+            token: Data.current.token,
+            body: { transforms: { layout: selectedLayout } },
+          });
 
-        const response = await transformLayout({
-          token: Data.current.token,
-          body: { transforms: { layout: selectedLayout } },
-        });
-
-        if (response.ok) {
-          console.log("Transform Layout successfully", response);
-        } else {
-          console.log(
-            "There is some network issue during Transform Layout : ",
-            response
-          );
+          if (response.ok) {
+            console.log("Transform Layout successfully", response);
+          } else {
+            console.log(
+              "There is some network issue during Transform Layout : ",
+              response
+            );
+          }
+        } catch (error) {
+          console.error("Error message: ", error);
         }
-      }catch(error){
-        console.error("Error message: ", error);
-      }
         //  hasChanges = true;
       }
 
       const onStageParticipants = participantsArray.filter((participant) => {
-        const initialParticipant = initialParticipantsArray.find(
-          (p) => p.uuid === participant.uuid
-        );
+       
         return (
-          initialParticipant &&
-          initialParticipant.layout_group !== null && initialParticipant.layout_group !== ""
+          participant && participant.layout_group !== null && participant.layout_group !== ""
         );
       });
 
       console.log("onStageParticipants value or data", onStageParticipants);
 
       const offScreenParticipants = participantsArray.filter((participant) => {
-        const initialParticipant = initialParticipantsArray.find(
-          (p) => p.uuid === participant.uuid
-        );
+        
         return (
-          initialParticipant &&
-          initialParticipant.layout_group === null  || initialParticipant.layout_group === ""
+          participant && (participant.layout_group === null ||
+            participant.layout_group === "")
         );
       });
 
@@ -159,7 +153,6 @@ function App() {
       // Make mecessary API calls to update participant's Layout_group values
       let parNumber = onStageParticipants.length;
       if (parNumber > 0) {
-        
         console.log("Participants on onStage count", parNumber);
         try {
           await setPinningConfig({
@@ -171,7 +164,6 @@ function App() {
         }
 
         if (parNumber > getParticipantsNumber(selectedLayout)) {
-          console.log("Calculated getParticipantsNumber using selectedLayout");
           const newLayout = getNewPresenterLayout(parNumber);
           try {
             await transformLayout({
@@ -187,8 +179,7 @@ function App() {
 
         // hasChanges = true;
         if (onStageParticipants.length > 0) {
-        for (const participant of onStageParticipants) {
-          
+          for (const participant of onStageParticipants) {
             //await callSetLayoutAPI(participant.uuid);
             try {
               await setParticipantToLayoutGroup({
@@ -201,12 +192,11 @@ function App() {
                 "There is error while setting participant LayoutGroup"
               );
             }
-          } 
+          }
         }
 
         if (offScreenParticipants.length > 0) {
-        for (const participant of offScreenParticipants) { 
-          
+          for (const participant of offScreenParticipants) {
             //await callReduceLayoutAPI(participant.uuid);
             try {
               await clearParticipantFromLayoutGroup({
