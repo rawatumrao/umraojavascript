@@ -11,9 +11,30 @@ import { BsCameraVideoOffFill, BsCameraVideoFill } from "react-icons/bs";
 import "./onstageoffscreen.css";
 // import { setParticipantToLayoutGroup, clearParticipantFromLayoutGroup } from "../../../utils/fetchRequests";
 
-const numberToWords=(num) => {
-  const words = ["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
-  return words[num -1] || "unknown";
+const numberToWords = (num) => {
+  const words = [
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+  ];
+  return words[num - 1] || "unknown";
 };
 
 const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
@@ -23,93 +44,100 @@ const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
 
   useEffect(() => {
     const loadItems = () => {
-      const onStage = data
-        .filter(
-          (item) =>
-            item.spotlightOrder !== 0 &&
+      try {
+        const onStage = data.filter((item) => {
+          if (item.layout_group === undefined) {
+            throw new Error("layout_group is undefined");
+          }
+          return (
+            item.layout_group !== "" &&
+            item.layout_group !== null &&
             item.protocol !== "api" &&
             item.protocol !== "rtmp"
-        )
-        .sort((a, b) => a.spotlightOrder - b.spotlightOrder);
-      const offScreen = data.filter(
-        (item) =>
-          item.spotlightOrder === 0 &&
-          item.protocol !== "api" &&
-          item.protocol !== "rtmp"
-      );
-      setOnStageItems(onStage);
-      setOffScreenItems(offScreen);
+          );
+        });
+        
+        const offScreen = data.filter((item) => {
+          if (item.layout_group === undefined) {
+            throw new Error("layout_group is undefined");
+          }
+          return (
+            (item.layout_group === "" || item.layout_group === null) &&
+            item.protocol !== "api" &&
+            item.protocol !== "rtmp"
+          );
+        });
+        
+        setOnStageItems(onStage);
+        setOffScreenItems(offScreen);
+      } catch (error) {
+        console.error("Error processing data: ", error.message);
+      }
     };
     loadItems();
   }, [data]);
 
-  
-  const onDragEnd = (result) => {
+  const updateLayoutGroups = (list, groupPrefix) => {
+    return list.map((item, index) => ({
+      ...item,
+      layout_group: numberToWords(index + 1),
+    }));
+  };
+
+  const handleDragEnd = (result) => {
     const { source, destination } = result;
 
     if (!destination) {
       return;
     }
 
-    const sourceList =
-      source.droppableId === "onStage" ? onStageItems : offScreenItems;
-    const destList =
-      destination.droppableId === "onStage" ? onStageItems : offScreenItems;
-    const [movedItem] = sourceList.splice(source.index, 1);
+    let updatedOnStageItems = [...onStageItems];
+    let updatedOffScreenItems = [...offScreenItems];
 
+    const sourceList =
+      source.droppableId === "onStage"
+        ? updatedOnStageItems
+        : updatedOffScreenItems;
+    const destList =
+      destination.droppableId === "onStage"
+        ? updatedOnStageItems
+        : updatedOffScreenItems;
+
+    const [movedItem] = sourceList.splice(source.index, 1);
+    // Set Layout_group for the moved item
     if (source.droppableId !== destination.droppableId) {
-      movedItem.spotlightOrder = destination.droppableId === "onStage" ? 1 : 0;
+      movedItem.layout_group =
+        destination.draggableId === "onStage" ? numberToWords(1) : "";
     }
 
     destList.splice(destination.index, 0, movedItem);
-    
-    if(destination.droppableId === "onStage"){
-      // Recalculated layout_group and update onStageItems
-      const updatedOnStageItems = destList.filter((item) => item.protocol !== "api" && item.protocol !== "rtmp").map((item, index) => ({
-        ...item,
-        layout_group: (index === null || index === 0 )? numberToWords(1): numberToWords(index + 1),
-      })); 
 
+    // Recalculate layout_group for the onStageItems
+    if (destination.droppableId === "onStage") {
+      updatedOnStageItems = updateLayoutGroups(destList, "onStage");
       setOnStageItems(updatedOnStageItems);
-      setOffScreenItems([...offScreenItems]);
+      // setOffScreenItems(updatedOffScreenItems);
     } else {
-      // Ensure layout_group is emplty for offScreenItems
-      const updatedOffScreenItems = destList.filter((item) => item.spotlightOrder === 0).sort((a, b) => a.spotlightOrder - b.spotlightOrder).map((item, index) => ({
+      // If Moving to offScreen, reset layout_group to empty
+      updatedOffScreenItems = destList.map((item) => ({
         ...item,
-        layout_group: "", // Keep layout_group as empty String
+        layout_group: "",
       }));
-
       setOffScreenItems(updatedOffScreenItems);
-      setOnStageItems([...onStageItems]);
+      // setOnStageItems(updatedOnStageItems);
     }
- 
-    // if (destination.droppableId === "onStage") {
-    //   setOnStageItems(
-    //     destList
-    //       .filter((item) => item.protocol !== "api" && item.protocol !== "rtmp")
-    //       .sort((a, b) => a.spotlightOrder - b.spotlightOrder)
-    //   );
-    //   setOffScreenItems([...offScreenItems]);
-    // } else {
-    //   setOffScreenItems(
-    //     destList.filter(
-    //       (item) => item.protocol !== "api" && item.protocol !== "rtmp"
-    //     )
-    //   );
-    //   setOnStageItems([...onStageItems]);
-    // }
 
-    const updatedData = [...onStageItems, ...offScreenItems].map((item) =>
-      item.uuid === movedItem.uuid
-        ? { ...item, spotlightOrder: movedItem.spotlightOrder }
-        : item
+    //Recalculate layout_group for the onStage items if needed
+    const undatedOnStageAfterRemoval = updateLayoutGroups(
+      updatedOnStageItems,
+      "onStage"
     );
+    setOnStageItems(undatedOnStageAfterRemoval);
 
-    // const updatedData = [...updatedOnStageItems, ...updatedOffScreenItems].map((item) =>
-    //   item.uuid === movedItem.uuid
-    //     ? { ...item, spotlightOrder: movedItem.spotlightOrder }
-    //     : item
-    // );
+    const updatedData = [
+      ...undatedOnStageAfterRemoval,
+      ...updatedOffScreenItems,
+    ];
 
     setData(updatedData);
     setParticipantsArray(updatedData); //Update the parent state with new data
@@ -126,6 +154,7 @@ const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
       }
       return participant;
     });
+    setData(updatedParticipants);
     setParticipantsArray(updatedParticipants);
     localStorage.setItem("participants", JSON.stringify(updatedParticipants)); //persist to local storage
   };
@@ -137,12 +166,13 @@ const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
       }
       return participant;
     });
+    setData(updatedParticipants);
     setParticipantsArray(updatedParticipants);
     localStorage.setItem("participants", JSON.stringify(updatedParticipants)); //persist to local storage
   };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext onDragEnd={handleDragEnd}>
       <div className="container">
         <div className="list-container">
           <h4 onClick={() => setOnStageOpen(!onStageOpen)}>
@@ -200,7 +230,8 @@ const OnStageOffScreen = ({ participantsArray, setParticipantsArray }) => {
                             </span>
                             {item.role === "chair" && (
                               <>
-                              <FaUserTie color="blue"/>Host
+                                <FaUserTie color="blue" />
+                                Host
                               </>
                             )}
                           </span>
