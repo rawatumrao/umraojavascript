@@ -1,23 +1,32 @@
 import React, { useContext, useState } from "react";
-import "../mlayout/media.css";
-import OnStageOffScreen from "./onstageoffscreen.jsx";
+import PropTypes from "prop-types";
+import "../media/mediaStyle.css";
+import "./pmanagementStyle.css";
+import VoiceActivated from "./voice-activated/voiceActivated.jsx";
+//import Switch from "react-switch";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  MdOutlineKeyboardArrowDown,
-  MdOutlineKeyboardArrowRight,
-} from "react-icons/md";
-import Switch from "react-switch";
+  faToggleOff,
+  faToggleOn,
+  faAngleDown,
+  faAngleRight,
+} from "@fortawesome/free-solid-svg-icons";
 //import { clearPinningConfig } from "../../../utils/fetchRequests.js";
 import { AppContext } from "../../../contexts/context.js";
+import {ALT_TAGS} from "../../../constants/constants.js";
 
-const PManagement = ({participantsArray, setParticipantsArray}) => {
-  const {setVoiceActivated} = useContext(AppContext);
+const PManagement = ({ participantsArray, setParticipantsArray, header,
+  roleStatus,
+  talkingPplArray,
+  pexipBroadCastChannel, }) => {
+  const { setVoiceActivated } = useContext(AppContext);
   const [checked, setChecked] = useState(true);
   const [expanded, setExpanded] = useState(true);
 
-  const handleChange = (nextChecked) => {
-    setChecked(nextChecked);
-    setVoiceActivated(nextChecked);
-  }; 
+  const handleChange = () => {
+    setChecked(!checked);
+    setVoiceActivated(!checked);
+  };
 
   const toggleExpandCollapse = () => {
     setExpanded(!expanded);
@@ -26,45 +35,66 @@ const PManagement = ({participantsArray, setParticipantsArray}) => {
   return (
     <div className="expand-collapse-container">
       <div className="header">
-          <span className="expand-button" onClick={toggleExpandCollapse}>
-            {!expanded ? (
-              <MdOutlineKeyboardArrowRight />
-            ) : (
-              <MdOutlineKeyboardArrowDown />
-            )}
-            Presenter Management
-          </span>
+        <span className="expand-button" onClick={toggleExpandCollapse}>
+          <FontAwesomeIcon icon={expanded ? faAngleDown : faAngleRight} />
+          Presenter Management
+        </span>
       </div>
       {expanded && (
         <div>
           <div>
             <span className="switch-label">
               Voice-Activated
-              <div className="toggle-container">
-                <span className="toggle-label">OFF</span>
-                <Switch
-                  onChange={handleChange}
-                  checked={checked}
-                  offColor="#888"
-                  onColor="#00BFFF"
-                  onHandleColor="#00BFFF"
-                  handleDiameter={20}
-                  checkedIcon={false}
-                  height={20}
-                  width={48}
-                />
+              <div className="toggle-container" >
+                <span className="toggle-label">OFF</span>     
+                <span className="switch" onClick={handleChange}  alt={!checked ? ALT_TAGS.switchOff : ALT_TAGS.switchOn}
+                title={!checked ? ALT_TAGS.switchOff : ALT_TAGS.switchOn}> 
+                {!checked ? (
+                  <FontAwesomeIcon icon={faToggleOff} className="fa-lg" color="white"  />
+                                  ) : (
+                     <FontAwesomeIcon icon={faToggleOn} className="fa-lg" color="Aqua" />
+                  )}
+                  </span>
                 <span className="toggle-label">ON</span>
               </div>
             </span>
           </div>
 
           <div>
-            {!checked && <OnStageOffScreen participantsArray={participantsArray} setParticipantsArray={setParticipantsArray} />}
+            {!checked && (
+              <VoiceActivated
+                participantsArray={participantsArray}
+                setParticipantsArray={setParticipantsArray}
+                header={header}
+                roleStatus={roleStatus}
+                talkingPplArray={talkingPplArray}
+                pexipBroadCastChannel={pexipBroadCastChannel}
+              />
+            )}
           </div>
         </div>
       )}
     </div>
   );
+};
+
+PManagement.propTypes = {
+  participantsArray: PropTypes.arrayOf(
+    PropTypes.shape({
+      uuid: PropTypes.string.isRequired,
+      displayName: PropTypes.string.isRequired,
+      spotlightOrder: PropTypes.number.isRequired,
+      protocol: PropTypes.string,
+      isMuted: PropTypes.bool,
+      isCameraMuted: PropTypes.bool,
+      role: PropTypes.string,
+    })
+  ).isRequired,
+  setParticipantsArray: PropTypes.func.isRequired,
+  header: PropTypes.string,
+  roleStatus: PropTypes.bool,
+  talkingPplArray: PropTypes.array,
+  pexipBroadCastChannel: PropTypes.object,
 };
 
 export default PManagement;
