@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { FaUserTie } from "react-icons/fa";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMicrophone,
-  faMicrophoneSlash,
-  faVideoSlash,
-  faVideo,
-} from "@fortawesome/free-solid-svg-icons";
-import {
-  faAngleDown,
-  faAngleRight,
-} from "@fortawesome/free-solid-svg-icons";
+
+import { faAngleDown, faAngleRight } from "@fortawesome/free-solid-svg-icons";
 import "./voiceActivatedStyle.css";
-import {HEADERS, EVENTS, BUTTON_NAMES} from "../../../../constants/constants"
+import { HEADERS, EVENTS, BUTTON_NAMES } from "../../../../constants/constants";
 import { layoutGroupValue } from "../../../../constants/imageConstants";
 import ParticipantsListBtn from "../../../utility/ParticipantsListBtn/ParticipantsListBtn";
 import ParticipantsListDisplayName from "../../../utility/ParticipantsListDisplayName/ParticipantsListDisplayName";
@@ -23,13 +14,19 @@ const numberToWords = (num) => {
   return layoutGroupValue[num - 1] || "unknown";
 };
 
-const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleStatus,
+const VoiceActivated = ({
+  participantsArray,
+  setParticipantsArray,
+  header,
+  roleStatus,
   talkingPplArray,
-  pexipBroadCastChannel,}) => {
-
+  pexipBroadCastChannel,
+}) => {
   const [onStageItems, setOnStageItems] = useState([]);
   const [offScreenItems, setOffScreenItems] = useState([]);
   const [data, setData] = useState(participantsArray);
+  const [onStageOpen, setOnStageOpen] = useState(false);
+  const [offScreenOpen, setOffScreenOpen] = useState(false);
 
   useEffect(() => {
     const loadItems = () => {
@@ -67,7 +64,7 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
   }, [data]);
 
   const updateLayoutGroups = (destList) => {
-  //  console.log("Called updateLayoutGroups");
+    //  console.log("Called updateLayoutGroups");
 
     return destList.map((item, index) => {
       const newLayout_group = numberToWords(index + 1);
@@ -141,24 +138,24 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
 
     setData(updatedData);
     setParticipantsArray(updatedData); //Update the parent state with new data
-    localStorage.setItem("participants", JSON.stringify(updatedData)); // Persist to localstorage
+    //localStorage.setItem("participants", JSON.stringify(updatedData)); // Persist to localstorage
 
-      // send ordered list to parent page to be saved
-      let listName = "";
-      if (header === HEADERS.waitingToJoin) listName = HEADERS.waitingToJoin;
-      if (header === HEADERS.presenters) listName = HEADERS.presenters;
-      if (header === HEADERS.streams) listName = HEADERS.streams;
+    // send ordered list to parent page to be saved
+    let listName = "";
+    if (header === HEADERS.waitingToJoin) listName = HEADERS.waitingToJoin;
+    if (header === HEADERS.presenters) listName = HEADERS.presenters;
+    if (header === HEADERS.streams) listName = HEADERS.streams;
 
-      pexipBroadCastChannel.postMessage({
-          event: EVENTS.orderedList,
-          info: JSON.parse(JSON.stringify(updatedData)),
-          orderedListName: listName,
-        });
+    pexipBroadCastChannel.postMessage({
+      event: EVENTS.orderedList,
+      info: JSON.parse(JSON.stringify(updatedData)),
+      orderedListName: listName,
+    });
   };
 
   const draggingStyles = (isDragging, draggableStyle, talkingPerson) => ({
     userSelect: "none",
-    background: isDragging ? "#484A64" : "#24253c",
+    background: isDragging ? "#181818" : "black",
     display: "flex",
     padding: "9px",
     border:
@@ -171,15 +168,14 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
     ...draggableStyle,
   });
 
-  const [onStageOpen, setOnStageOpen] = useState(false);
-  const [offScreenOpen, setOffScreenOpen] = useState(false);
+  
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="container">
         <div className="list-container">
           <h4 onClick={() => setOnStageOpen(!onStageOpen)}>
-            <FontAwesomeIcon icon={onStageOpen  ? faAngleDown : faAngleRight} />
+            <FontAwesomeIcon icon={onStageOpen ? faAngleDown : faAngleRight} />
             On Stage
           </h4>
           {onStageOpen && (
@@ -206,32 +202,38 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
                             snapshot.isDragging,
                             provided.draggableProps.style,
                             talkingPplArray.find(
-                              (person) => person?.vad && person?.userId === item.uuid
+                              (person) =>
+                                person?.vad && person?.userId === item.uuid
                             )
                           )}
                         >
                           <span className="item-content">
-                          <ParticipantsListDisplayName {...item} header={header} />
-                            
+                            <ParticipantsListDisplayName
+                              {...item}
+                              header={header}
+                            />
                           </span>
-                          <span className="">
+
                           <div>
-                              {item.is_audio_only_call ? null : (
-                                 <>
-                                    <ParticipantsListBtn
-                                        attr={BUTTON_NAMES.video}
-                                        {...item}
-                                        roleStatus={roleStatus}
-                                        pexipBroadCastChannel={pexipBroadCastChannel}
-                                      />
-                                   </>
-                                )}
-                            </div>
-                            <div>
-                              <ParticipantsListBtn attr={BUTTON_NAMES.audio} {...item} roleStatus={roleStatus} pexipBroadCastChannel={pexipBroadCastChannel} />
-                              
-                            </div>
-                          </span>
+                            {item.is_audio_only_call ? null : (
+                              <>
+                                <ParticipantsListBtn
+                                  attr={BUTTON_NAMES.video}
+                                  {...item}
+                                  roleStatus={roleStatus}
+                                  pexipBroadCastChannel={pexipBroadCastChannel}
+                                />
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            <ParticipantsListBtn
+                              attr={BUTTON_NAMES.audio}
+                              {...item}
+                              roleStatus={roleStatus}
+                              pexipBroadCastChannel={pexipBroadCastChannel}
+                            />
+                          </div>
                         </div>
                       )}
                     </Draggable>
@@ -244,7 +246,9 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
         </div>
         <div className="list-container">
           <h4 onClick={() => setOffScreenOpen(!offScreenOpen)}>
-          <FontAwesomeIcon icon={offScreenOpen  ? faAngleDown : faAngleRight} />
+            <FontAwesomeIcon
+              icon={offScreenOpen ? faAngleDown : faAngleRight}
+            />
             Off Screen
           </h4>
           {offScreenOpen && (
@@ -261,7 +265,7 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
                       draggableId={item.uuid}
                       index={index}
                     >
-                      {(provided, snapshot ) => (
+                      {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
@@ -271,28 +275,36 @@ const VoiceActivated = ({ participantsArray, setParticipantsArray, header, roleS
                             snapshot.isDragging,
                             provided.draggableProps.style,
                             talkingPplArray.find(
-                              (person) => person?.vad && person?.userId === item.uuid
+                              (person) =>
+                                person?.vad && person?.userId === item.uuid
                             )
                           )}
                         >
                           <span className="item-content">
-                          <ParticipantsListDisplayName {...item} header={header} />
+                            <ParticipantsListDisplayName
+                              {...item}
+                              header={header}
+                            />
                           </span>
                           <div>
-                            
                             {item.is_audio_only_call ? null : (
-                                 <>
-                                    <ParticipantsListBtn
-                                        attr={BUTTON_NAMES.video}
-                                        {...item}
-                                        roleStatus={roleStatus}
-                                        pexipBroadCastChannel={pexipBroadCastChannel}
-                                      />
-                                   </>
-                                )}
+                              <>
+                                <ParticipantsListBtn
+                                  attr={BUTTON_NAMES.video}
+                                  {...item}
+                                  roleStatus={roleStatus}
+                                  pexipBroadCastChannel={pexipBroadCastChannel}
+                                />
+                              </>
+                            )}
                           </div>
                           <div>
-                            <ParticipantsListBtn attr={BUTTON_NAMES.audio} {...item} roleStatus={roleStatus} pexipBroadCastChannel={pexipBroadCastChannel} />
+                            <ParticipantsListBtn
+                              attr={BUTTON_NAMES.audio}
+                              {...item}
+                              roleStatus={roleStatus}
+                              pexipBroadCastChannel={pexipBroadCastChannel}
+                            />
                           </div>
                         </div>
                       )}
