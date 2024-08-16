@@ -1,4 +1,59 @@
-import { EVENT_ID, NODE_ADDRESS, INITIAL_TOKEN } from "../config/constants";
+import { EVENT_ID, NODE_ADDRESS, INITIAL_TOKEN } from "../constants/constants";
+
+const fetchWithWithoutRetry = async (url, options) => {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status:: ${response.status}`);
+      }
+      return response;
+};
+
+const fetchWithRetry = async (url, options, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status:: ${response.status}`);
+      }
+      return response;
+    } catch (error) {
+      if (i === retries - 1) {
+        throw error;
+      }
+    }
+  }
+};
+
+const timeoutPromise = (timeout) => {
+  return new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Request time out")), timeout)
+  );
+};
+
+const fetchWithRetryWithTimeout = async (
+  url,
+  options,
+  retries = 3,
+  timeout = 5000
+) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await Promise.race([
+        fetch(url, options),
+        timeoutPromise(timeout),
+      ]);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status:: ${response.status}`);
+      }
+      return response;
+    } catch (error) {
+      if (i === retries - 1) {
+        throw error;
+      }
+    }
+  }
+};
 
 export const participantsPostFetch = async (data) => {
   await fetch(
@@ -60,120 +115,155 @@ export const conferenceGetFetch = async (data) => {
 /* ============================     Control-Room-Api      =============================== */
 
 export const transformLayout = async (data) => {
-  console.log("Selected Layout and new token: ", data.body);
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/transform_layout`, {
+  //  console.log("Selected Layout and new token: ", data.body);
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/transform_layout`;
+  const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       token: `${data.token}`,
     },
     body: JSON.stringify(data.body),
-  });
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
   return response;
 };
 
 export const fetchParticipants = async () => {
-  
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants`, {
-    headers: {
-      token: `${INITIAL_TOKEN}`, 
-    },
-  });
+  const response = await fetch(
+    `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants`,
+    {
+      headers: {
+        token: `${INITIAL_TOKEN}`,
+      },
+    }
+  );
   const data = await response.json();
-  console.log("Verify generated token info", data.result );
+  //console.log("Verify generated token info", data.result );
   return data.result;
 };
 
-export const participantSpotlightOn = async (data) => {
-  console.log("called participantSpotlightOn api ", data.token);
-  await fetch(
-    `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/spotlighton`,
+export const fetchInitialParticipants = async () => {
+  const response = await fetch(
+    `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants`,
     {
-      method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        token: `${data.token}`,
-      }
+        token: `${INITIAL_TOKEN}`,
+      },
     }
   );
+  return await response.json();
+};
+
+// fetchWithRetryWithTimeout
+export const participantSpotlightOn = async (data) => {
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/spotlighton`;
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      token: `${data.token}`,
+    },
+  };
+  await fetchWithRetryWithTimeout(url, options);
 };
 
 export const participantSpotlightOff = async (data) => {
-  console.log("called participantSpotlightOff api ", data.token);
-  await fetch(
-    `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/spotlightoff`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        token: `${data.token}`,
-      }
-    }
-  );
+  //console.log("called participantSpotlightOff api ", data.token);
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/spotlightoff`;
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      token: `${data.token}`,
+    },
+  };
+  await fetchWithRetryWithTimeout(url, options);
 };
 
 /* ============================     Pinning API call During Voice-Activation Mode in Control-Room-Api      =============================== */
 
 export const setPinningConfig = async (data) => {
-  console.log("called setPinningConfig api and value is: ", data.pinning_config);
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/set_pinning_config`,  {
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/set_pinning_config`;
+  const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       token: `${data.token}`,
     },
-    body: JSON.stringify({"pinning_config": data.pinning_config}),
-  });
+    body: JSON.stringify({ pinning_config: data.pinning_config }),
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
   return response;
 };
 
 export const getPinningConfig = async (data) => {
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/get_pinning_config`, {
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/get_pinning_config`;
+  const options = {
     headers: {
       token: `${data.token}`,
     },
-  });
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
   const responseData = await response.json();
   return responseData.result;
 };
-
-
 export const clearPinningConfig = async (data) => {
-  console.log("Called clearPinningConfig");
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/set_pinning_config`, {
+  // console.log("Called clearPinningConfig");
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/set_pinning_config`;
+  const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       token: `${data.token}`,
     },
-    body: JSON.stringify({"pinning_config": ""}),
-  });
+    body: JSON.stringify({ pinning_config: "" }),
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
   return response;
 };
 
 export const setParticipantToLayoutGroup = async (data) => {
-  console.log("called setParticipantToLayoutGroup API", data.layoutgroup);
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/layout_group`,  {
+  //console.log("called setParticipantToLayoutGroup API", data.layoutgroup);
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/layout_group`;
+  const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       token: `${data.token}`,
     },
-    body: JSON.stringify({"layout_group": data.layoutgroup }),
-  });
+    body: JSON.stringify({ layout_group: data.layoutgroup }),
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
   return response;
 };
 
 export const clearParticipantFromLayoutGroup = async (data) => {
-  console.log("called clearParticipantFromLayoutGroup API");
-  const response = await fetch(`https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/layout_group`,  {
+  // console.log("called clearParticipantFromLayoutGroup API");
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/layout_group`;
+  const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       token: `${data.token}`,
     },
-    body: JSON.stringify({"layout_group": data.layoutgroup }),
-  });
+    body: JSON.stringify({ layout_group: null }),
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
   return response;
 };
 
+export const clearParticipantFromLayoutGroupWhileInVoiceAct = async (data) => {
+  // console.log("called clearParticipantFromLayoutGroup API");
+  const url = `https://${NODE_ADDRESS}/api/client/v2/conferences/${EVENT_ID}/participants/${data.uuid}/layout_group`;
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      token: `${data.token}`,
+    },
+    body: JSON.stringify({ layout_group: "" }),
+  };
+  const response = await fetchWithRetryWithTimeout(url, options);
+  return response;
+};
