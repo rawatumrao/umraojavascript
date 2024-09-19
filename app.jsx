@@ -33,6 +33,27 @@ import {
 } from "./constants/imageConstants.js";
 import { findRoleOfUser, sortParticipants } from "./utils/categorizeFuncs.js";
 
+const reorderLayoutGroups = (participantsArray) => {
+  // Filter participants with non-null layout_group
+  const onStageParticipants = participantsArray
+    .filter((participant) => participant.layout_group !== null)
+    .sort((a, b) => a.layout_group - b.layout_group); // Sort by current layout_group
+
+  // Reassign layout_group values sequentially (1, 2, 3...)
+  onStageParticipants.forEach((participant, index) => {
+    participant.layout_group = index + 1;
+  });
+
+  // Return updated participants array
+  return participantsArray.map((participant) => {
+    const onStageParticipant = onStageParticipants.find(
+      (p) => p.uuid === participant.uuid
+    );
+    return onStageParticipant ? { ...participant, layout_group: onStageParticipant.layout_group } : participant;
+  });
+};
+
+
 const bc = new BroadcastChannel("pexip");
 
 function App() {
